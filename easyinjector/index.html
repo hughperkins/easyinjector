@@ -1,0 +1,76 @@
+<html>
+<body>
+<h1>Easy injector</h1>
+
+<h2>Goals</h2>
+<ul>
+<li>Cyclic dependencies possible</li>
+<li>Simple</li>
+<li>No xml files</li>
+</ul>
+<h2>Concept</h2>
+<p>We have two classes, A and B. B depends on A. A depends on B.</p>
+
+<pre>
+public class A{
+	B b;
+}
+public class B{
+	A a;
+}
+</pre>
+
+<p>Traditionally, we are unable to construct a or b, since object A must be entirely constructed before it can be used as a dependency.  Similar for object B.  Therefore neither can be constructed, and our program fails.
+
+<p>In fact, it is possible to build these instances in two steps:
+<ul>
+<li>construct both a and b, ignoring dependencies</li>
+<li>inject b into a, and a into b</li>
+</ul>
+</p>
+
+<p>This is what EasyInjector does.</p>
+
+<h2>Example usage</h2>
+
+<h4>Add setter method, and an "@Inject" annotation:</h4>
+
+<pre>
+public class A{
+	B b;
+	
+	@Inject
+	public void setB( B b ) {
+		this.b = b;
+	}
+	public void go(){ ... }
+}
+
+public class B {
+	A a;
+	
+	@Inject
+	public void setA( A a ) {
+		this.a = a;
+	}
+	public void go(){ ... }
+}
+</pre>
+
+<h4>Use setterinjector:</h4>
+<pre>
+		SetterInjector setterInjector = new SetterInjector();
+		
+		setterInjector.addComponent(A.class);
+		setterInjector.addComponent(B.class);
+		
+		setterInjector.instanceOf(A.class).go();
+		setterInjector.instanceOf(B.class).go();
+</pre>
+
+<h2>Download</h2>
+
+<p><a href="download.cgi">Download</a></p>
+
+<body>
+</html>
