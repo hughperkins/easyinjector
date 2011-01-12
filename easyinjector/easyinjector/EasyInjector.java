@@ -43,13 +43,15 @@ public class EasyInjector {
 	HashMap<Class<?>,Class<?>  > componentByInterface = new HashMap<Class<?>, Class<?>>(); 
 
 	public void addComponent(Class<?> componentClass) {
-		components.add(componentClass);
-		Class<?>[] interfaces = componentClass.getInterfaces();
-		for(Class<?> thisinterface : interfaces ) {
-			if( componentByInterface.containsKey(thisinterface)) {
-				System.out.println("Warning: overwriting existing interface " + thisinterface + " with " + componentClass );
+		if( !components.contains(componentClass)) {
+			components.add(componentClass);
+			Class<?>[] interfaces = componentClass.getInterfaces();
+			for(Class<?> thisinterface : interfaces ) {
+				if( componentByInterface.containsKey(thisinterface)) {
+					System.out.println("Warning: overwriting existing interface " + thisinterface + " with " + componentClass );
+				}
+				componentByInterface.put(thisinterface, componentClass);				
 			}
-			componentByInterface.put(thisinterface, componentClass);				
 		}
 	}
 
@@ -69,6 +71,7 @@ public class EasyInjector {
 		if( instanceByClass.containsKey(componentClass)){
 			return (T)instanceByClass.get(componentClass);
 		}
+		addComponent(componentClass);
 		T instance = null;
 		try {
 			Constructor[] constructors = componentClass.getConstructors();
