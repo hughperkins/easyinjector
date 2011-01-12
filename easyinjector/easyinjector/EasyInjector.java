@@ -25,14 +25,17 @@ package easyinjector;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
 
 public class EasyInjector {
 	@Target(ElementType.METHOD)
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface Inject {
+	}
+	@Target(ElementType.FIELD)
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface InjectField {
 	}
 
 	ArrayList<Class<?>> components = new ArrayList<Class<?>>();
@@ -69,20 +72,22 @@ public class EasyInjector {
 		T instance = null;
 		try {
 			Constructor[] constructors = componentClass.getConstructors();
-			if( constructors.length < 1 ) {
-				throw new RuntimeException("Error: no constructor found for " + componentClass );
-			}
 			if( constructors.length > 1 ) {
 				System.out.println("Warning: more than one constructor found for " + componentClass );
 			}
-			Constructor constructor = constructors[0];
-			Class<?>[] constructorParameterTypes = constructor.getParameterTypes();
-			int numConstructorParams = constructorParameterTypes.length;
-			Object[] constructorParameters = new Object[numConstructorParams];
-			for( int i = 0; i < numConstructorParams; i++ ) {
-				constructorParameters[i] = instanceOf(constructorParameterTypes[i]);
+			if( constructors.length > 0 ) {
+//				throw new RuntimeException("Error: no constructor found for " + componentClass );
+				Constructor constructor = constructors[0];
+				Class<?>[] constructorParameterTypes = constructor.getParameterTypes();
+				int numConstructorParams = constructorParameterTypes.length;
+				Object[] constructorParameters = new Object[numConstructorParams];
+				for( int i = 0; i < numConstructorParams; i++ ) {
+					constructorParameters[i] = instanceOf(constructorParameterTypes[i]);
+				}
+				instance = (T)constructor.newInstance(constructorParameters);
+			} else {
+				instance = (T)componentClass.newInstance();
 			}
-			instance = (T)constructor.newInstance(constructorParameters);
 			instanceByClass.put(componentClass, instance);
 			addDependencies( instance);
 		} catch( Exception e) {
@@ -115,6 +120,25 @@ public class EasyInjector {
 			Class<?> dependencyType = parameterTypes[0];
 			Object dependency = instanceOf(dependencyType);
 			method.invoke(instance, dependency);
+		}
+		
+		// now repeat for fields
+		Field[] fields = componentClass.getDeclaredFields();
+		for( Field field : fields ) {
+			InjectField annotation = field.getAnnotation(InjectField.class);
+			if( annotation == null ) {
+				continue;
+			}
+
+			Class<?> dependencyType = field.getType();
+			Object dependency = instanceOf(dependencyType);
+			if( !field.isAccessible() ) {
+				field.setAccessible(true);
+				field.set(instance, dependency);
+				field.setAccessible(false);
+			} else {
+				field.set(instance, dependency);				
+			}
 		}
 	}
 	
