@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 import easyinjector.EasyInjector;
 import easyinjector.EasyInjector.Inject;
 
-public class TestConsructorInjection extends TestCase {
+public class TestConstructorInjection extends TestCase {
 	public static class A{
 		B b;
 		
