@@ -22,6 +22,8 @@
 
 package easyinjector;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.annotation.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -32,16 +34,35 @@ public class EasyInjector {
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface Inject {
 	}
-	
+
 	ArrayList<Class<?>> components = new ArrayList<Class<?>>();
 	HashMap<Class<?>,Object> instanceByClass = new HashMap<Class<?>, Object>();
+	HashMap<Class<?>,Class<?>  > componentByInterface = new HashMap<Class<?>, Class<?>>(); 
 
 	public void addComponent(Class<?> componentClass) {
 		components.add(componentClass);
+		Class<?>[] interfaces = componentClass.getInterfaces();
+		for(Class<?> thisinterface : interfaces ) {
+			if( componentByInterface.containsKey(thisinterface)) {
+				System.out.println("Warning: overwriting existing interface " + thisinterface + " with " + componentClass );
+			}
+			componentByInterface.put(thisinterface, componentClass);				
+		}
 	}
-	
+
+	public <T> void addInstance( T instance ) {
+		if( instanceByClass.containsKey(instance.getClass())) {
+			System.out.println("Warning: overwriting existing " + instance.getClass() + " with " + instance );
+		}
+		instanceByClass.put(instance.getClass(), instance);
+	}
+
 	@SuppressWarnings( "unchecked")
-	public <T> T instanceOf(Class<T>componentClass ) {
+	public <T> T instanceOf(Class<T>interfaceClass ) {
+		Class<?>componentClass = interfaceClass;
+		if( componentByInterface.containsKey(interfaceClass)) {
+			componentClass = componentByInterface.get(interfaceClass);
+		}
 		if( instanceByClass.containsKey(componentClass)){
 			return (T)instanceByClass.get(componentClass);
 		}
@@ -49,12 +70,10 @@ public class EasyInjector {
 		try {
 			Constructor[] constructors = componentClass.getConstructors();
 			if( constructors.length < 1 ) {
-				System.out.println("Error: no constructor found for " + componentClass );
-				return null;
+				throw new RuntimeException("Error: no constructor found for " + componentClass );
 			}
 			if( constructors.length > 1 ) {
 				System.out.println("Warning: more than one constructor found for " + componentClass );
-				return null;
 			}
 			Constructor constructor = constructors[0];
 			Class<?>[] constructorParameterTypes = constructor.getParameterTypes();
@@ -64,31 +83,30 @@ public class EasyInjector {
 				constructorParameters[i] = instanceOf(constructorParameterTypes[i]);
 			}
 			instance = (T)constructor.newInstance(constructorParameters);
-//			instance = componentClass.newInstance();
 			instanceByClass.put(componentClass, instance);
-			addDependencies(componentClass, instance);
+			addDependencies( instance);
 		} catch( Exception e) {
-			System.out.println("couldn't construct " + componentClass);
-			e.printStackTrace();
+			throw new RuntimeException("couldn't construct " + componentClass + "\n" + exceptionToStackTrace(e));
 		}
-		
+
 		return instance;
 	}
-	
-	<T> void addDependencies( Class<T> componentClass, T instance ) throws Exception {
+
+	<T> void addDependencies( T instance ) throws Exception {
 		// 1. get methods
 		// 2. check for annotation of @Inject
 		//    3. for each
 		//       4. determine dependency
 		//       5. construct dependency
-		
+
+		Class<?>componentClass = instance.getClass();
 		Method[] methods = componentClass.getMethods();
 		for( Method method : methods ) {
 			Inject annotation = method.getAnnotation(Inject.class);
 			if( annotation == null ) {
 				continue;
 			}
-			
+
 			Class<?>[] parameterTypes = method.getParameterTypes();
 			if( parameterTypes.length != 1 ) {
 				System.out.println("Warning: setter " + method.getName() + " should have one parameter, not " + parameterTypes.length);
@@ -99,4 +117,11 @@ public class EasyInjector {
 			method.invoke(instance, dependency);
 		}
 	}
+	
+	public static String exceptionToStackTrace( Exception e ) {
+		StringWriter stringWriter = new StringWriter();
+		PrintWriter printWriter = new PrintWriter( stringWriter );
+		e.printStackTrace( printWriter );
+		return stringWriter.toString();
+	}	   
 }
