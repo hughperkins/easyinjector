@@ -63,7 +63,7 @@ public class EasyInjector {
 	}
 
 	@SuppressWarnings( "unchecked")
-	public <T> T instanceOf(Class<T>interfaceClass ) {
+	public <T> T instanceOf(Class<T>interfaceClass ) throws Exception {
 		Class<?>componentClass = interfaceClass;
 		if( componentByInterface.containsKey(interfaceClass)) {
 			componentClass = componentByInterface.get(interfaceClass);
@@ -73,10 +73,13 @@ public class EasyInjector {
 		}
 		addComponent(componentClass);
 		T instance = null;
-		try {
+//		try {
 			Constructor[] constructors = componentClass.getConstructors();
 			if( constructors.length > 1 ) {
 				System.out.println("Warning: more than one constructor found for " + componentClass );
+			}
+			if( componentClass.isInterface() ) {
+				throw new Exception("No implementing class registered for " + componentClass );
 			}
 			if( constructors.length > 0 ) {
 //				throw new RuntimeException("Error: no constructor found for " + componentClass );
@@ -93,9 +96,9 @@ public class EasyInjector {
 			}
 			instanceByClass.put(componentClass, instance);
 			addDependencies( instance);
-		} catch( Exception e) {
-			throw new RuntimeException("couldn't construct " + componentClass + "\n" + exceptionToStackTrace(e));
-		}
+//		} catch( Exception e) {
+//			throw new RuntimeException("couldn't construct " + componentClass + "\n" + exceptionToStackTrace(e));
+//		}
 
 		return instance;
 	}
