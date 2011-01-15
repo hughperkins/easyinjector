@@ -5,14 +5,14 @@ import java.util.*;
 
 import easyinjector.EasyInjector.InjectField;
 
-public class  UnitTestingInstanceBuilder <T>{
+public class  UnitTestingBuilder <T>{
 	Class<T> componentClass;
 	
 	HashMap<Class<?>, Object> dependencies = new HashMap<Class<?>, Object>();
 	
 	HashSet<Class<?>> ambiguousinterfaces = new HashSet<Class<?>>();
 
-	public UnitTestingInstanceBuilder( Class<T> componentClass ){
+	public UnitTestingBuilder( Class<T> componentClass ){
 		this.componentClass = componentClass;
 	}
 
