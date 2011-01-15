@@ -23,7 +23,7 @@ public class TestSetterInjectionFields extends TestCase {
 		}
 	}
 	
-	public void testSetterInjectionFields(){
+	public void testSetterInjectionFields() throws Exception {
 		EasyInjector injector = new EasyInjector();
 		assertEquals( 52, injector.instanceOf(A.class).go() );
 	}

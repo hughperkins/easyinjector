@@ -44,7 +44,7 @@ public class TestConstructorInjection extends TestCase {
 		}
 	}
 
-	public void testConstructorInjection(){
+	public void testConstructorInjection() throws Exception {
 		EasyInjector injector = new EasyInjector();
 		assertEquals( 2, injector.instanceOf(A.class).go() );
 		assertEquals( 1, injector.instanceOf(B.class).go() );

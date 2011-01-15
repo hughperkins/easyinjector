@@ -50,7 +50,7 @@ public class TestCyclicInjection extends TestCase {
 		}
 	}
 	
-	public void testSetterInjectionFields(){
+	public void testSetterInjectionFields() throws Exception {
 		EasyInjector injector = new EasyInjector();
 		assertEquals( 51, injector.instanceOf(A.class).go() );
 		assertEquals( 41, injector.instanceOf(B.class).go() );
