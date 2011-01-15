@@ -148,10 +148,4 @@ public class EasyInjector {
 		}
 	}
 	
-	public static String exceptionToStackTrace( Exception e ) {
-		StringWriter stringWriter = new StringWriter();
-		PrintWriter printWriter = new PrintWriter( stringWriter );
-		e.printStackTrace( printWriter );
-		return stringWriter.toString();
-	}	   
 }
