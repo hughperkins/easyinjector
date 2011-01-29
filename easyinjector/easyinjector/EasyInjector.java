@@ -42,28 +42,34 @@ public class EasyInjector {
 	HashMap<Class<?>,Object> instanceByClass = new HashMap<Class<?>, Object>();
 	HashMap<Class<?>,Class<?>  > componentByInterface = new HashMap<Class<?>, Class<?>>(); 
 
+	HashSet<Class<?>> ambiguousinterfaces = new HashSet<Class<?>>();
+	HashSet<Class<?>> classesUnderConstruction = new HashSet<Class<?>>();
+
 	public void addComponent(Class<?> componentClass) {
 		if( !components.contains(componentClass)) {
 			components.add(componentClass);
 			Class<?>[] interfaces = componentClass.getInterfaces();
 			for(Class<?> thisinterface : interfaces ) {
 				if( componentByInterface.containsKey(thisinterface)) {
-					System.out.println("Warning: overwriting existing interface " + thisinterface + " with " + componentClass );
+					ambiguousinterfaces.add(thisinterface);
 				}
 				componentByInterface.put(thisinterface, componentClass);				
 			}
 		}
 	}
 
-	public <T> void addInstance( T instance ) {
+	public <T> void addInstance( T instance ) throws Exception {
 		if( instanceByClass.containsKey(instance.getClass())) {
-			System.out.println("Warning: overwriting existing " + instance.getClass() + " with " + instance );
+			throw new Exception("Error: overwriting existing " + instance.getClass() + " with " + instance );
 		}
 		instanceByClass.put(instance.getClass(), instance);
 	}
 
 	@SuppressWarnings( "unchecked")
 	public <T> T instanceOf(Class<T>interfaceClass ) throws Exception {
+		if( ambiguousinterfaces.contains(interfaceClass)){
+			throw new Exception("interface " + interfaceClass + " implemented by multiple instances.");
+		}
 		Class<?>componentClass = interfaceClass;
 		if( componentByInterface.containsKey(interfaceClass)) {
 			componentClass = componentByInterface.get(interfaceClass);
@@ -71,34 +77,36 @@ public class EasyInjector {
 		if( instanceByClass.containsKey(componentClass)){
 			return (T)instanceByClass.get(componentClass);
 		}
+		if( classesUnderConstruction.contains(componentClass)){
+			throw new IllegalArgumentException("Cyclic dependency between classes using constructor injection.");
+		}
+		
 		addComponent(componentClass);
 		T instance = null;
-//		try {
-			Constructor[] constructors = componentClass.getConstructors();
-			if( constructors.length > 1 ) {
-				System.out.println("Warning: more than one constructor found for " + componentClass );
+
+		Constructor[] constructors = componentClass.getConstructors();
+		if( constructors.length > 1 ) {
+			System.out.println("Warning: more than one constructor found for " + componentClass );
+		}
+		if( componentClass.isInterface() ) {
+			throw new Exception("No implementing class registered for " + componentClass );
+		}
+		classesUnderConstruction.add(componentClass);
+		if( constructors.length > 0 ) {
+			Constructor constructor = constructors[0];
+			Class<?>[] constructorParameterTypes = constructor.getParameterTypes();
+			int numConstructorParams = constructorParameterTypes.length;
+			Object[] constructorParameters = new Object[numConstructorParams];
+			for( int i = 0; i < numConstructorParams; i++ ) {
+				constructorParameters[i] = instanceOf(constructorParameterTypes[i]);
 			}
-			if( componentClass.isInterface() ) {
-				throw new Exception("No implementing class registered for " + componentClass );
-			}
-			if( constructors.length > 0 ) {
-//				throw new RuntimeException("Error: no constructor found for " + componentClass );
-				Constructor constructor = constructors[0];
-				Class<?>[] constructorParameterTypes = constructor.getParameterTypes();
-				int numConstructorParams = constructorParameterTypes.length;
-				Object[] constructorParameters = new Object[numConstructorParams];
-				for( int i = 0; i < numConstructorParams; i++ ) {
-					constructorParameters[i] = instanceOf(constructorParameterTypes[i]);
-				}
-				instance = (T)constructor.newInstance(constructorParameters);
-			} else {
-				instance = (T)componentClass.newInstance();
-			}
-			instanceByClass.put(componentClass, instance);
-			addDependencies( instance);
-//		} catch( Exception e) {
-//			throw new RuntimeException("couldn't construct " + componentClass + "\n" + exceptionToStackTrace(e));
-//		}
+			instance = (T)constructor.newInstance(constructorParameters);
+		} else {
+			instance = (T)componentClass.newInstance();
+		}
+		classesUnderConstruction.remove(componentClass);
+		instanceByClass.put(componentClass, instance);
+		addDependencies( instance);
 
 		return instance;
 	}
@@ -127,7 +135,7 @@ public class EasyInjector {
 			Object dependency = instanceOf(dependencyType);
 			method.invoke(instance, dependency);
 		}
-		
+
 		// now repeat for fields
 		Field[] fields = componentClass.getDeclaredFields();
 		for( Field field : fields ) {
@@ -147,5 +155,5 @@ public class EasyInjector {
 			}
 		}
 	}
-	
+
 }
