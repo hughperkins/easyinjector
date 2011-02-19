@@ -27,6 +27,7 @@ import java.io.StringWriter;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EasyInjector {
 	@Target(ElementType.METHOD)
@@ -57,7 +58,25 @@ public class EasyInjector {
 			}
 		}
 	}
-
+	
+	public List<Class<?>> getComponents(){
+		return new CopyOnWriteArrayList<Class<?>>( components );
+	}
+	
+	public List<Object> getInstances(){
+		ArrayList<Object> instances = new ArrayList<Object>();
+		for( Object instance : instanceByClass.values() ) {
+			instances.add( instance );
+		}
+		return instances;
+	}
+	
+	public void printInstances(){
+		for( Class<?> instanceType : instanceByClass.keySet() ) {
+			System.out.println( instanceType + " -> " + instanceByClass.get(instanceType));
+		}		
+	}
+	
 	public <T> void addInstance( T instance ) throws Exception {
 		if( instanceByClass.containsKey(instance.getClass())) {
 			throw new Exception("Error: overwriting existing " + instance.getClass() + " with " + instance );
@@ -78,7 +97,7 @@ public class EasyInjector {
 			return (T)instanceByClass.get(componentClass);
 		}
 		if( classesUnderConstruction.contains(componentClass)){
-			throw new IllegalArgumentException("Cyclic dependency between classes using constructor injection.");
+			throw new IllegalArgumentException("Cyclic dependency between classes using constructor injection for " + componentClass);
 		}
 		
 		addComponent(componentClass);
@@ -111,7 +130,7 @@ public class EasyInjector {
 		return instance;
 	}
 
-	<T> void addDependencies( T instance ) throws Exception {
+	public <T> void addDependencies( T instance ) throws Exception {
 		// 1. get methods
 		// 2. check for annotation of @Inject
 		//    3. for each

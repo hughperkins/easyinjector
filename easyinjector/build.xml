@@ -1,34 +1,34 @@
-<project default="package">
-	<target name="package">
-		<taskdef name="query" classpath="/sdwhite/blockworld/git/BlockWorld/thirdparty/JeraAntTasks.jar"
+<project default="dopackage">
+	<target name="dopackage">
+		<taskdef name="query" classpath="/xdata/blockworld/git/blockworldthirdparty/JeraAntTasks.jar"
 		classname="com.jera.anttasks.Query"/>
 		<query name="keystorepassword" password="true"/>
 		<query name="webpassword" password="true"/>
 		<jar
-			basedir="/home/user/workspace/EasyInjector/bin"
+			basedir="/home/user/workspace-hugh/EasyInjector/bin"
 			includes="**/*.class"
-			destfile="/sdwhite/blockworld/dist/lib/easyinjector.jar"
+			destfile="/xdata/blockworld/dist/lib/easyinjector.jar"
 			>
 		</jar>
 		<jar
-			basedir="/sdwhite/blockworld/git/BlockWorld/easyinjector"
+			basedir="/xdata/blockworld/git/easyinjector"
 			includes="**/*.java"
-			destfile="/sdwhite/blockworld/dist/lib/easyinjector-src.jar"
+			destfile="/xdata/blockworld/staging/dist/easyinjector-src.jar"
 			>
 		</jar>
-		<signjar alias="myself" jar="/sdwhite/blockworld/dist/lib/easyinjector.jar" 
-			keystore="/sdwhite/blockworld/dist/myKeystore" 
+		<signjar alias="myself" jar="/xdata/blockworld/staging/dist/easyinjector.jar" 
+			keystore="/xdata/blockworld/staging/myKeystore" 
 			storepass="${keystorepassword}"/>	
-		<scp file="/sdwhite/blockworld/dist/lib/easyinjector-src.jar" 
+		<scp file="/xdata/blockworld/staging/dist/easyinjector-src.jar" 
 			todir="mdweb@manageddreams.com:~/hughperkins.com/blockworldws" 
 		password="${webpassword}" />
-		<scp file="/sdwhite/blockworld/dist/lib/easyinjector.jar" 
+		<scp file="/xdata/blockworld/staging/dist/easyinjector.jar" 
 			todir="mdweb@manageddreams.com:~/hughperkins.com/blockworldws" 
 		password="${webpassword}" />
-		<scp file="/sdwhite/blockworld/dist/lib/easyinjector-src.jar" 
+		<scp file="/xdata/blockworld/staging/dist/easyinjector-src.jar" 
 			todir="mdweb@manageddreams.com:~/hughperkins.com/easyinjector" 
 		password="${webpassword}" />
-		<scp file="/sdwhite/blockworld/dist/lib/easyinjector.jar" 
+		<scp file="/xdata/blockworld/staging/dist/easyinjector.jar" 
 			todir="mdweb@manageddreams.com:~/hughperkins.com/easyinjector" 
 		password="${webpassword}" />
 	</target>
