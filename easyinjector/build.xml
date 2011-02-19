@@ -7,7 +7,7 @@
 		<jar
 			basedir="/home/user/workspace-hugh/EasyInjector/bin"
 			includes="**/*.class"
-			destfile="/xdata/blockworld/dist/lib/easyinjector.jar"
+			destfile="/xdata/blockworld/staging/dist/easyinjector.jar"
 			>
 		</jar>
 		<jar
