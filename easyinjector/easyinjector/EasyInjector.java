@@ -87,7 +87,11 @@ public class EasyInjector {
 			throw new Exception("Error: overwriting existing " + instance.getClass() + " with " + instance );
 		}
 		addComponent(instance.getClass());
-		instanceByClass.put(instance.getClass(), instance);
+		Class<?> thisclass = instance.getClass();
+		while( !thisclass.equals(Object.class)){
+			instanceByClass.put(thisclass, instance);
+			thisclass = thisclass.getSuperclass();
+		}
 	}
 
 	@SuppressWarnings( "unchecked")
