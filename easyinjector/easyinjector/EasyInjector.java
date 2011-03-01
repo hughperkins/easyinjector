@@ -39,15 +39,17 @@ public class EasyInjector {
 	public @interface InjectField {
 	}
 
-	ArrayList<Class<?>> components = new ArrayList<Class<?>>();
+	HashSet<Class<?>> components = new HashSet<Class<?>>();
 	HashMap<Class<?>,Object> instanceByClass = new HashMap<Class<?>, Object>();
 	HashMap<Class<?>,Class<?>  > componentByInterface = new HashMap<Class<?>, Class<?>>(); 
 
 	HashSet<Class<?>> ambiguousinterfaces = new HashSet<Class<?>>();
 	HashSet<Class<?>> classesUnderConstruction = new HashSet<Class<?>>();
 
+	boolean instantiateUnregistered = true; // do we instantiate classes that have not been registered?
+	
 	public void addComponent(Class<?> componentClass) {
-		if( !components.contains(componentClass)) {
+		if( !components.contains(componentClass) && !componentClass.equals(Object.class)) {
 			components.add(componentClass);
 			Class<?>[] interfaces = componentClass.getInterfaces();
 			for(Class<?> thisinterface : interfaces ) {
@@ -56,11 +58,14 @@ public class EasyInjector {
 				}
 				componentByInterface.put(thisinterface, componentClass);				
 			}
+			if( componentClass.getSuperclass() != null ) {
+				addComponent(componentClass.getSuperclass());
+			}
 		}
 	}
 	
 	public List<Class<?>> getComponents(){
-		return new CopyOnWriteArrayList<Class<?>>( components );
+		return new ArrayList<Class<?>>( components );
 	}
 	
 	public List<Object> getInstances(){
@@ -81,6 +86,7 @@ public class EasyInjector {
 		if( instanceByClass.containsKey(instance.getClass())) {
 			throw new Exception("Error: overwriting existing " + instance.getClass() + " with " + instance );
 		}
+		addComponent(instance.getClass());
 		instanceByClass.put(instance.getClass(), instance);
 	}
 
@@ -99,8 +105,14 @@ public class EasyInjector {
 		if( classesUnderConstruction.contains(componentClass)){
 			throw new IllegalArgumentException("Cyclic dependency between classes using constructor injection for " + componentClass);
 		}
-		
-		addComponent(componentClass);
+
+		if(!instantiateUnregistered && !components.contains(componentClass)){
+			throw new IllegalArgumentException("Trying to instantiate unregistered class " + interfaceClass);
+		}			
+
+		if(instantiateUnregistered) {
+			addComponent(componentClass);
+		}
 		T instance = null;
 
 		Constructor[] constructors = componentClass.getConstructors();
@@ -125,7 +137,12 @@ public class EasyInjector {
 		}
 		classesUnderConstruction.remove(componentClass);
 		instanceByClass.put(componentClass, instance);
-		addDependencies( instance);
+		try {
+			addDependencies( instance);
+		} catch( Exception e ) {
+			instanceByClass.remove(componentClass);
+			throw e;
+		}
 
 		return instance;
 	}
@@ -173,6 +190,14 @@ public class EasyInjector {
 				field.set(instance, dependency);				
 			}
 		}
+	}
+
+	public boolean isInstantiateUnregistered() {
+		return instantiateUnregistered;
+	}
+
+	public void setInstantiateUnregistered(boolean instantiateUnregistered) {
+		this.instantiateUnregistered = instantiateUnregistered;
 	}
 
 }
