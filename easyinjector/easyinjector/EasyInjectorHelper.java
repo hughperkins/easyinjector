@@ -2,7 +2,6 @@ package easyinjector;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
 
 public class EasyInjectorHelper {
 	public static String exceptionToStackTrace( Exception e ) {

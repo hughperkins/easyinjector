@@ -22,12 +22,9 @@
 
 package easyinjector;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EasyInjector {
 	@Target(ElementType.METHOD)
@@ -94,8 +91,23 @@ public class EasyInjector {
 		}
 	}
 
-	@SuppressWarnings( "unchecked")
 	public <T> T instanceOf(Class<T>interfaceClass ) throws Exception {
+		if( !interfaceClass.isInterface() ) {
+			addComponent(interfaceClass);
+//			components.add(interfaceClass);
+		}
+		T instance = instanceOfInternal(interfaceClass);
+		Class<?> thisclass = instance.getClass();
+		while( !thisclass.equals(Object.class)){
+			instanceByClass.put(thisclass, instance);
+			thisclass = thisclass.getSuperclass();
+		}
+//		addInstance(instance);
+		return instance;
+	}
+
+	@SuppressWarnings( "unchecked")
+	public <T> T instanceOfInternal(Class<T>interfaceClass ) throws Exception {
 		if( ambiguousinterfaces.contains(interfaceClass)){
 			throw new Exception("interface " + interfaceClass + " implemented by multiple instances.");
 		}
@@ -111,6 +123,9 @@ public class EasyInjector {
 		}
 
 		if(!instantiateUnregistered && !components.contains(componentClass)){
+			for( Class<?> debugInterfaceClass : componentByInterface.keySet() ){
+				System.out.println(debugInterfaceClass + " " + componentByInterface.get(interfaceClass));
+			}
 			throw new IllegalArgumentException("Trying to instantiate unregistered class " + interfaceClass);
 		}			
 
@@ -133,7 +148,7 @@ public class EasyInjector {
 			int numConstructorParams = constructorParameterTypes.length;
 			Object[] constructorParameters = new Object[numConstructorParams];
 			for( int i = 0; i < numConstructorParams; i++ ) {
-				constructorParameters[i] = instanceOf(constructorParameterTypes[i]);
+				constructorParameters[i] = instanceOfInternal(constructorParameterTypes[i]);
 			}
 			instance = (T)constructor.newInstance(constructorParameters);
 		} else {
@@ -172,7 +187,7 @@ public class EasyInjector {
 				continue;
 			}
 			Class<?> dependencyType = parameterTypes[0];
-			Object dependency = instanceOf(dependencyType);
+			Object dependency = instanceOfInternal(dependencyType);
 			method.invoke(instance, dependency);
 		}
 
@@ -185,7 +200,7 @@ public class EasyInjector {
 			}
 
 			Class<?> dependencyType = field.getType();
-			Object dependency = instanceOf(dependencyType);
+			Object dependency = instanceOfInternal(dependencyType);
 			if( !field.isAccessible() ) {
 				field.setAccessible(true);
 				field.set(instance, dependency);

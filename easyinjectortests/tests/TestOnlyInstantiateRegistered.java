@@ -40,12 +40,18 @@ public class TestOnlyInstantiateRegistered extends TestCase {
 		} catch( Exception e ) {
 
 		}
-		try {
+		injector = new EasyInjector();
+		injector.setInstantiateUnregistered(false);
+		injector.addComponent(A.class);
+//		try {
 			injector.instanceOf(B.class);
-			throw new AssertionFailedError();
-		} catch( Exception e ) {
-
-		}
+//			throw new AssertionFailedError();
+//		} catch( Exception e ) {
+//
+//		}
+		injector = new EasyInjector();
+		injector.setInstantiateUnregistered(false);
+		injector.addComponent(A.class);
 		injector.addComponent(B.class);
 		assertNotNull(injector.instanceOf(A.class));
 		assertNotNull(injector.instanceOf(B.class));
