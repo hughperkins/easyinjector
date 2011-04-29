@@ -176,6 +176,10 @@ public class EasyInjector {
 
 		return instance;
 	}
+	
+	public <T> void addDependencies( T instance ) throws Exception {
+		addDependencies(instance, new ArrayList<Class<?>>());
+	}
 
 	public <T> void addDependencies( T instance, ArrayList<Class<?>> debugChain ) throws Exception {
 		// 1. get methods
