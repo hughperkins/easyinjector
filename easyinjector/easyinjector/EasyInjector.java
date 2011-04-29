@@ -123,9 +123,9 @@ public class EasyInjector {
 		}
 
 		if(!instantiateUnregistered && !components.contains(componentClass)){
-			for( Class<?> debugInterfaceClass : componentByInterface.keySet() ){
-				System.out.println(debugInterfaceClass + " " + componentByInterface.get(interfaceClass));
-			}
+//			for( Class<?> debugInterfaceClass : componentByInterface.keySet() ){
+//				System.out.println(debugInterfaceClass + " " + componentByInterface.get(interfaceClass));
+//			}
 			throw new IllegalArgumentException("Trying to instantiate unregistered class " + interfaceClass);
 		}			
 
