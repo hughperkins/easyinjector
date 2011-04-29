@@ -38,7 +38,7 @@ public class TestOnlyInstantiateRegistered extends TestCase {
 			injector.instanceOf(A.class);
 			throw new AssertionFailedError();
 		} catch( Exception e ) {
-
+			e.printStackTrace();
 		}
 		injector = new EasyInjector();
 		injector.setInstantiateUnregistered(false);

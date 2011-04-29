@@ -96,7 +96,7 @@ public class EasyInjector {
 			addComponent(interfaceClass);
 //			components.add(interfaceClass);
 		}
-		T instance = instanceOfInternal(interfaceClass);
+		T instance = instanceOfInternal(interfaceClass, new ArrayList<Class<?>>());
 		Class<?> thisclass = instance.getClass();
 		while( !thisclass.equals(Object.class)){
 			instanceByClass.put(thisclass, instance);
@@ -107,7 +107,8 @@ public class EasyInjector {
 	}
 
 	@SuppressWarnings( "unchecked")
-	public <T> T instanceOfInternal(Class<T>interfaceClass ) throws Exception {
+	public <T> T instanceOfInternal(Class<T>interfaceClass, ArrayList<Class<?>> debugChain ) throws Exception {
+		debugChain.add(interfaceClass);
 		if( ambiguousinterfaces.contains(interfaceClass)){
 			throw new Exception("interface " + interfaceClass + " implemented by multiple instances.");
 		}
@@ -126,7 +127,17 @@ public class EasyInjector {
 //			for( Class<?> debugInterfaceClass : componentByInterface.keySet() ){
 //				System.out.println(debugInterfaceClass + " " + componentByInterface.get(interfaceClass));
 //			}
-			throw new IllegalArgumentException("Trying to instantiate unregistered class " + interfaceClass);
+			String chain = "";
+			boolean isFirst = true;
+			for(Class<?> chainClass : debugChain ) {
+				if(!isFirst ){
+					chain += " -> ";
+				}
+				isFirst = false;
+				chain += chainClass;
+			}
+			throw new IllegalArgumentException("Trying to instantiate unregistered class " + interfaceClass + "\n"
+					+ " callchain: " + chain );
 		}			
 
 		if(instantiateUnregistered) {
@@ -148,7 +159,7 @@ public class EasyInjector {
 			int numConstructorParams = constructorParameterTypes.length;
 			Object[] constructorParameters = new Object[numConstructorParams];
 			for( int i = 0; i < numConstructorParams; i++ ) {
-				constructorParameters[i] = instanceOfInternal(constructorParameterTypes[i]);
+				constructorParameters[i] = instanceOfInternal(constructorParameterTypes[i],debugChain);
 			}
 			instance = (T)constructor.newInstance(constructorParameters);
 		} else {
@@ -157,7 +168,7 @@ public class EasyInjector {
 		classesUnderConstruction.remove(componentClass);
 		instanceByClass.put(componentClass, instance);
 		try {
-			addDependencies( instance);
+			addDependencies( instance, debugChain);
 		} catch( Exception e ) {
 			instanceByClass.remove(componentClass);
 			throw e;
@@ -166,7 +177,7 @@ public class EasyInjector {
 		return instance;
 	}
 
-	public <T> void addDependencies( T instance ) throws Exception {
+	public <T> void addDependencies( T instance, ArrayList<Class<?>> debugChain ) throws Exception {
 		// 1. get methods
 		// 2. check for annotation of @Inject
 		//    3. for each
@@ -187,7 +198,8 @@ public class EasyInjector {
 				continue;
 			}
 			Class<?> dependencyType = parameterTypes[0];
-			Object dependency = instanceOfInternal(dependencyType);
+			ArrayList<Class<?>> childDebugChain = new ArrayList<Class<?>>(debugChain);
+			Object dependency = instanceOfInternal(dependencyType, childDebugChain);
 			method.invoke(instance, dependency);
 		}
 
@@ -200,7 +212,8 @@ public class EasyInjector {
 			}
 
 			Class<?> dependencyType = field.getType();
-			Object dependency = instanceOfInternal(dependencyType);
+			ArrayList<Class<?>> childDebugChain = new ArrayList<Class<?>>(debugChain);
+			Object dependency = instanceOfInternal(dependencyType, childDebugChain);
 			if( !field.isAccessible() ) {
 				field.setAccessible(true);
 				field.set(instance, dependency);

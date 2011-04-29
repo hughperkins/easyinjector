@@ -12,7 +12,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	TestInstanceAdding.class,
 	TestOnlyInstantiateRegistered.class,
 	TestSetterInjectionFields.class,
-	TestSubclasses.class
+	TestSubclasses.class,
+	TestUnregisteredCallChainDiagnosis.class
 })
 public class easyinjectortestsuite {
 
